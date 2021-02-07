@@ -1,0 +1,38 @@
+/* A helper class for our Recipe Management App. This class contains static methods
+that provide fuctionality related to recipes
+*/
+
+public with sharing class RecipeHelper {
+    
+    // takes ingredient details and creates(& inserts) a corresponding SOBject record with the provided recipe ID as the parent
+    public static void addIngredient (String ingredientName, Integer measurementAmount, String measurementType, ID recipeId) {
+        insert new Ingredient__c(Name = ingredientName, 
+                                 Measurement__c = measurementAmount, 
+                                 Measurement_Type__c = measurementType,
+                                 Recipe__c = RecipeId);
+    }
+    //This method does something very cool, it makes a list of the ingredients you need, along with their quantities. 
+    //For now, your method should be able to return a list of strings representing ingredient names based on the recipe id that was passed in.
+    public static List <String> generateGroceryList(ID recipeId) {
+        List <Ingredient__c> ings = new List<Ingredient__c>([SELECT Name FROM Ingredient__c WHERE ID=:recipeId ORDER BY Name DESC]);
+        List<String> recIngs = new List<String>();
+        for(Ingredient__c i: ings){
+            recIngs.add(i.name);}
+        return recIngs;
+    }
+    
+    public void scaleRecipeForServings (ID recipeId, Integer desiredServings) {
+        // based on the desired servings, scale the recipe ingredients up or down.
+        // use system.debug to print out the new ingredient quantity
+        //get a list of the Ingredients (Name), Measurement__c, and Measurement_Type__c from the Recipe__c
+        List <Ingredient__c> ingservs = new List<Ingredient__c>();
+        List <Ingredient__c> ingreds = [SELECT Name, Measurement_Type__c, Measurement__c  
+                                        FROM Ingredient__c 
+                                        WHERE ID=:recipeId 
+                                        ORDER BY Name DESC];
+        for(Ingredient__c i: ingreds){
+            i.Measurement__c = i.Measurement__c*desiredServings;
+            ingservs.add(i);
+            System.debug(i.Name + ' ' +i.Measurement__c + ' ' +i.Measurement_Type__c);}
+    }
+}
