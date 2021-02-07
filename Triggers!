@@ -1,0 +1,83 @@
+Trigger:
+trigger Week4HomeworkRecipeTrigger on Recipe__c (before insert, after insert, before update, after update) {
+
+    if (trigger.isBefore ){
+		if( trigger.isInsert || trigger.isUpdate)
+		{
+			Week4HomeworkRecipeTriggerHandler.DraftCheckAndComplexityRating();
+ 		}
+	}	
+    if (trigger.isAfter ){
+		if( trigger.isInsert || trigger.isUpdate)
+		{
+			Week4HomeworkRecipeTriggerHandler.createAReviewTask();
+		}
+	}	
+}
+Handler:
+public class Week4HomeworkRecipeTriggerHandler {
+    /*Create a method that will be called before a recipe is inserted or updated to check if it is missing key values.
+If it is missing one or more of the following, check the Draft__c field on the recipe:
+Name
+Active_Time__c
+Description__c
+Active_Time_Units__c
+Servings__c
+*/
+/*Create a method that checks before a recipe is inserted or updated and does the following:
+Calls out to a method on the HelperFunctions class called rateRecipeComplexity.
+This method already exists in your org!
+Gets the numerical rating back from the method and use it to fill in the Complexity__c field.
+FYI: If the method returns a 3, that’s ‘Difficult’, a 2 is ‘Moderate’ and a 1 is ‘Simple’
+Your method on RecipeUtil needs to get the rating for each recipe in the trigger and update the Complexity field.
+*/ 
+public static void DraftCheckAndComplexityRating() {
+    list<Recipe__c> newRecipes = new list<Recipe__c>();
+    for (Recipe__c r: (List<Recipe__c>) Trigger.new) {
+      
+      if (r.Active_Time__c == NULL || r.Description__c == NULL || r.Active_Time_Units__c == NULL || r.Servings__c == NULL || r.Name__c == NULL) {
+        
+          r.Draft__c = true;
+          
+          Integer rating = HelperFunctions.rateRecipeComplexity(r);
+            if(rating == 1) {r.Complexity__c ='Simple';
+                            }
+            else if (rating == 2) {r.Complexity__c ='Moderate';
+                                  }
+            else if (rating == 3) {r.Complexity__c ='Difficult';
+                                  }
+            else {r.Complexity__c = '';
+                 }
+            newRecipes.add(r);
+      }//end if statement
+   }//end for loop
+    }//end method	
+ 
+    public static void createAReviewTask (){
+        //instantiate and configure Due Date variable to make the task due-date 1 week from today
+        Date dDate = Date.today(); //sets today's date
+        dDate = dDate.addDays(7); //adds one week
+        //instanitate an empty task list to collect all the review tasks to be added
+        List<Task> newReviews = new List<Task>();
+        // create the list of recipes to hold the trigger's items
+        List<Recipe__c> newRecipes = new List<Recipe__c>([SELECT Id, Name, Draft__c, OwnerId, (SELECT Id, Recipe__c FROM Recipe_Usages__r) FROM Recipe__c WHERE Id in :Trigger.newMap.keySet()]);
+        //loop through the recipes in the trigger to see if they're drafts or have usage records
+        for(Recipe__c r :newRecipes){
+          if (String.isNotBlank(r.Id) && !r.Draft__c && !r.Recipe_Usages__r.isEmpty()){ 
+                 //create a new task record if the recipe isnt a draft and has a usage record
+                //assign review to the recipe owner (user who owns the cookbook?)
+                //set due date for one week using variable created above                                   
+                Task myRev = new Task(
+                    WhatId = r.ID,
+                    Subject = 'Review of ' + r.Name,
+                    Status = 'Not Started',
+                    ActivityDate = dDate,
+                    OwnerId = r.OwnerId);
+                //add this new review sObject to our list of reviews
+                newReviews.add(myRev);
+            } //end if loop
+            //Insert the Tasks
+            Insert newReviews;
+        }//end for loop
+    }//end method
+}//end handler class
