@@ -1,0 +1,69 @@
+@isTest
+public class TestFactory {
+    
+        public static Recipe__c getRecipe(String name, Boolean doInsert){
+        Recipe__c r = new Recipe__c(name = name);
+        if(doInsert){
+            insert r;
+        }
+        return r;
+    }
+
+ public static Ingredient__c getIngredient(String name, Boolean doInsert){  
+        Ingredient__c i = new Ingredient__c(Name = name);
+        if(doInsert){
+            insert i;
+        }
+        return i;
+    }
+/*Method 1: Creates and returns a list of Ingredient SObject records with dummy data.  
+It should take a parameter that dictates the number of Ingredient objects to be returned
+Each Recipe in the list should have a different name (hint, this can be Ingredient1, Ingredient2 etc)
+It should create the objects in-memory and return them, WITHOUT INSERTING
+*/
+//Note: I created this as if the instructions asked for a list of ingredients, not recipes, as it seemed like a typo in the instructions
+
+/*Method 2: Creates, inserts, and returns Ingredient SObjects
+It should take a parameter that dictates the number of Ingredients to be created and returned
+Each Ingredient in the list should have a different name
+It SHOULD INSERT the records and return them
+//Note:  since this is the same requirement, I solved it by adding the Boolean doInsert
+*/
+    public static Ingredient__c[] getIngredientList(Integer numIngredients, Boolean doInsert){
+        List<Ingredient__c> ingredients = new List<Ingredient__c>();
+        for(Integer i = 0; i < numIngredients; i++){
+            Ingredient__c ing = new Ingredient__c();
+            ing.name = 'Ingredient' + i;
+            ingredients.add(ing);
+        }
+            if(doInsert){
+                insert ingredients;
+            }
+        return ingredients;
+    }
+
+
+/*Method 3: Creates, inserts and returns a list of Recipe SObject records with dummy data.  
+It should take parameters that: 
+dictates the number of Recipe objects to be created and returned 
+An Ingredient that should be created and added to each Recipe
+Hint: Can you use the methods you wrote for Ingredient to help you with this??
+Bonus: Can you create an additional method that does all the above, but also allows you to pass in a list of ingredients to add to each recipe?
+*/ 
+//I addressed the requirement and bonus together by allowing a parameter to accept the number of ingredients for each recipe.  
+    public static Recipe__c[] generateRecsWithIngs(Integer numIngs, Integer numRecs, Boolean doInsert){
+        List<Recipe__c> recs = new List<Recipe__c>();
+        List <Ingredient__c> ings = getIngredientList(numIngs, false);
+        Recipe__c r = new Recipe__c();     
+        for(Ingredient__c ing : ings)
+            ing.Recipe__r = r; 
+        for(Integer i = 0; i < numRecs; i++){
+            r.name = 'Recipe ' + i;
+            recs.add(r);   
+        }
+        if(doInsert){
+                insert recs;
+            }
+        return recs;
+    }
+}
