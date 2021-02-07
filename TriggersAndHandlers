@@ -1,0 +1,54 @@
+trigger Week3HomeworkLeadTrigger on Lead (after insert, after update) {
+  new Week3HomeworkLeadTriggerHandler();
+}
+
+/*After Insert &amp; After Update Handling
+○ Based on a Lead’s Product Interest, create a task to follow up
+with the lead.
+○ However, If the trigger is firing on after update, we only want to
+create a task if the product interest has changed. Otherwise
+we’ll get a new task every time the lead is edited in any way!
+■ Hint: Comparing values from the old version of lead and
+the new version of lead*/
+
+public class Week3HomeworkLeadTriggerHandler {
+    
+    //create a new task record if the product interest on the Lead record has changed
+    Public static void createTask(List<Lead> listLeads) {
+        
+        //set up Due Date variable, which is 1 month from today
+        Date dDate = Date.today(); //sets today's date
+        dDate = dDate.addMonths(1); //adds one month
+        
+        //create an empty task list/array to collect all the tasks to be added
+        List<Task> newTasks = new List<Task>();
+        
+        //loop through the Leads that were just created or updated
+        For (Lead lead:listLeads){
+            Lead oldLead = (Lead)Trigger.oldMap.get(lead.Id);
+            Lead newLead = (Lead)Trigger.newMap.get(lead.Id);
+            //check if the product interest on the Lead record has changed  if pI.trigger.old not equal to pI.trigger.new
+            if(oldLead.ProductInterest__c != newLead.ProductInterest__c) {
+                system.debug('Product Interest has changed for this Lead: '+ newLead.Name);
+                
+                //create a new Task with due date and
+                //assign Task to the Lead owner
+                Task myTask = new Task(
+                    Subject = 'Follow up on ' + lead.Name,
+                    status = 'Not Started',
+                    ActivityDate = dDate,
+                    WhoID = lead.ID,
+                    ownerID = lead.OwnerId
+                );
+                
+                //add this new task sObject to our list of tasks
+                newTasks.add(myTask);
+                
+            } // end if
+        } //end for loop
+        
+        //insert the batch of new tasks into salesforce
+        Insert newTasks;
+        
+    } //end createTask method
+} // End Week3HomeworkLeadTriggerHandler class
