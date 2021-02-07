@@ -1,0 +1,63 @@
+//Create Test Methods to do positive tests on the methods you wrote last week
+//Execute your tests in VSCode or in the Developer Console and see if they pass!
+//methods:  DraftCheck(need recipes with null values to see if they'll result in the draft box checked) 
+//rateComplexityOfRecipes (need recipes with 1,2,3 integer complexity ratings)
+//createAReviewTask (need recipes that are not a draft and have a usage record)
+@isTest
+private class Week4HomeworkRecipeTriggerHandler_Test {
+    
+    
+    @isTest static void testBeforeTrigger () {
+        // when Active_Time__c, Description__c, Active_Time_Units__c, Servings__c are null, check the Draft__c 
+        //check complexity rating based on helpermethod 
+        // create recipe that is a draft
+        Recipe__c rec = new Recipe__c();
+        rec.Name = 'Test Recipe 1';
+        rec.Active_Time__c = NULL;
+		rec.Description__c = NULL;
+		rec.Active_Time_Units__c = NULL;
+		rec.Servings__c = NULL;
+        insert rec;
+        
+       Recipe__c tr = [SELECT ID, Draft__c, Complexity__c FROM Recipe__c WHERE ID = :rec.Id ];
+          
+        System.assertEquals(true,tr.Draft__c);
+        System.assertEquals('Simple', tr.Complexity__c);
+}
+    
+    @isTest static void testAfterTrigger () {   
+        
+        // create test recipe - not a draft
+        Recipe__c testr = new Recipe__c();
+        testr.Name = 'Test Recipe';
+        testr.Name__c = 'Still Test Recipe';
+        testr.Active_Time__c = 45; 
+        testr.Description__c = 'Description of Test recipe ';
+        testr.Active_Time_Units__c= 'Minutes';
+        testr.Servings__c= 6; 
+        
+        insert testr;
+        
+        //Create a cookbook
+        Cookbook__c cb = new Cookbook__c(); 
+        cb.Name = 'Test Cookbook';
+        cb.Status__c = 'Published';
+        
+        insert cb;
+             
+        //Create usage record
+        Recipe_Usage__c cbuse = new Recipe_Usage__c(); 
+        cbuse.Cookbook__c = cb.Id; 
+        cbuse.Recipe__c = testr.Id;
+        
+        insert cbuse;
+    
+        update testr;
+        
+        Recipe__c rec = [SELECT ID FROM Recipe__c WHERE ID=:testr.Id];
+        list<task> rev = [SELECT Subject FROM task WHERE WhatId = :rec.Id ];
+        
+        System.assertEquals(1, rev.size(), 'There should be 1 task for this recipe'); 
+        
+    }
+}
